@@ -1,7 +1,4 @@
-import log from "@log";
-import {create} from "apisauce";
 import {SHOP_BASE_URL, thekeys} from "./endPoints";
-import axios from "axios";
 const Header = {
   "Content-Type": "application/json",
   // 'Authorization': 'O5mGIP3VNia0JvPH2IBiwA==',

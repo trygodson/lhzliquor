@@ -1,23 +1,42 @@
-import {View, SafeAreaView, StyleSheet, Pressable, Image, Text, TouchableOpacity} from "react-native";
-import {CustomHeader2, Signuppop} from "../components/common";
+import {
+  View,
+  SafeAreaView,
+  StyleSheet,
+  Pressable,
+  Image,
+  Text,
+  TouchableOpacity,
+  Alert,
+  useWindowDimensions,
+} from "react-native";
+import {CustomHeader2, Loader2, Signuppop} from "../components/common";
 import {mdscale, vtscale} from "../utils/pixelRatio";
 import Signout from "../assets/icons/Signout.svg";
 import Job from "../assets/icons/Job.svg";
 import Address from "../assets/icons/address.svg";
 import Person from "../assets/icons/sPerson2.svg";
+import DelPerson from "../assets/icons/acctDelete.svg";
 import {fonts} from "../utils/constants";
 import AppColors from "../utils/ColorApp";
 import {CommonActions, StackActions, useNavigation} from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {navigationRef} from "../Main";
-import {useSelector} from "react-redux";
-
+import {useDispatch, useSelector} from "react-redux";
+import {deleteAccountService} from "../services/auth";
+import {useState} from "react";
+import {setLogin} from "../store/slices/auth/loginSlice";
 const AccountScreen = () => {
-  const {navigate} = useNavigation();
+  const dispatch = useDispatch();
+  const {navigate, reset} = useNavigation();
+  const [loading, setLoading] = useState(false);
   const {LOGIN} = useSelector((state) => state.login);
+  const {response} = useSelector((state) => state.userAddress);
+  const {width, height} = useWindowDimensions();
   const signout = async () => {
     try {
       await AsyncStorage.clear();
+      dispatch(setLogin(false));
+
       navigationRef.dispatch(
         CommonActions.reset({
           index: 0,
@@ -26,6 +45,45 @@ const AccountScreen = () => {
       );
     } catch (error) {}
   };
+
+  const deleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are You Sure You Want to Delete Account",
+      [
+        {
+          text: "Cancel",
+          onPress: () => null,
+          style: "",
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            // setLoading(true);
+            await handleDeleteAccount();
+          },
+        },
+      ],
+      {cancelable: true}
+    );
+  };
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    deleteAccountService({email: response?.email})
+      .then(async (res) => {
+        setLoading(false);
+
+        console.log(res, "------res-----");
+        await signout();
+      })
+      .catch((err) => {
+        setLoading(false);
+
+        alert("Unable To Delete Account");
+        console.log(err);
+      });
+  };
+
   return (
     <View style={{backgroundColor: "white", flex: 1}}>
       <SafeAreaView style={{flex: 1}}>
@@ -34,8 +92,40 @@ const AccountScreen = () => {
           <View>
             <Signuppop />
           </View>
+        ) : loading ? (
+          <View style={{height: height * 0.8, width: width, justifyContent: "center", alignItems: "center"}}>
+            <Loader2 />
+          </View>
         ) : (
-          <View style={{justifyContent: "flex-end", flex: 1}}>
+          <View style={{justifyContent: "space-between", flex: 1}}>
+            <View style={{marginTop: 50, zIndex: 3, alignSelf: "center", alignItems: "center"}}>
+              <Text
+                style={{
+                  textTransform: "uppercase",
+                  fontSize: 16,
+                  color: AppColors.black,
+                  fontFamily: fonts.SemiBold,
+                  flexWrap: "wrap",
+                  textAlign: "center",
+                }}
+              >
+                Hello
+              </Text>
+              <Text
+                style={{
+                  textTransform: "uppercase",
+                  fontSize: 28,
+                  color: AppColors.black,
+                  fontFamily: fonts.Bold,
+                  marginVertical: 10,
+                  flexWrap: "wrap",
+                  textAlign: "center",
+                }}
+              >
+                {response?.first_name} {response?.last_name}
+              </Text>
+            </View>
+
             <View style={{backgroundColor: "white", paddingTop: 15}}>
               <Pressable onPress={() => navigate("OrderScreen")} style={styles.listItems}>
                 <View style={styles.IconTextView}>
@@ -44,19 +134,25 @@ const AccountScreen = () => {
                 </View>
               </Pressable>
 
-              <Pressable onPress={() => {}} style={styles.listItems}>
+              {/* <Pressable onPress={() => {}} style={styles.listItems}>
                 <View style={styles.IconTextView}>
                   <Address width={25} height={25} />
 
                   <Text style={styles.listItemTexts}>Address</Text>
                 </View>
-                {/* <Image source={require("@Assets/flatlistrightarrow.png")} style={styles.rightflatIcon} /> */}
-              </Pressable>
+              </Pressable> */}
 
-              <Pressable style={styles.listItems} onPress={() => {}}>
+              <Pressable style={styles.listItems} onPress={() => navigate("AccountDetailScreen")}>
                 <View style={styles.IconTextView}>
                   <Person width={25} height={25} />
                   <Text style={styles.listItemTexts}>Account Details</Text>
+                </View>
+                {/* <Image source={require("@Assets/flatlistrightarrow.png")} style={styles.rightflatIcon} /> */}
+              </Pressable>
+              <Pressable style={styles.listItems} onPress={() => deleteAccount()}>
+                <View style={styles.IconTextView}>
+                  <DelPerson width={25} height={25} />
+                  <Text style={styles.listItemTexts}>Delete Account</Text>
                 </View>
                 {/* <Image source={require("@Assets/flatlistrightarrow.png")} style={styles.rightflatIcon} /> */}
               </Pressable>

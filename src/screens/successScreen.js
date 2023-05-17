@@ -122,9 +122,12 @@ const SuccessScreen = ({route}) => {
                       >
                         {data &&
                           data?.items.length > 0 &&
-                          data?.items.map((item) => {
+                          data?.items.map((item, i) => {
                             return (
-                              <View style={{flexDirection: "row", justifyContent: "space-between", paddingVertical: 4}}>
+                              <View
+                                key={i}
+                                style={{flexDirection: "row", justifyContent: "space-between", paddingVertical: 4}}
+                              >
                                 <View style={{flexDirection: "row"}}>
                                   <Text
                                     style={{fontSize: 15, color: "#333333", fontFamily: fonts.Light, marginRight: 5}}
@@ -309,7 +312,7 @@ const SuccessScreen = ({route}) => {
                         </Text>
                       </View>
                     </View>
-                    <TouchableOpacity onPress={() => navigate("ShopScreen")}>
+                    <TouchableOpacity onPress={() => navigate("ShopStack")}>
                       <View
                         style={{
                           flex: 1,

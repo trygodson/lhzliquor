@@ -26,3 +26,15 @@ export async function getOrders(id) {
     throw error;
   }
 }
+export async function getUserAddressService(id) {
+  let header = {
+    "Content-Type": "application/json",
+    letscms_token: await Global.getToken(),
+  };
+  try {
+    const response = await shopAPi(ApiEndpoints.USER_ADDRESS, null, "GET", null, true, header);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}

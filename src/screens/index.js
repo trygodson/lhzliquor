@@ -12,3 +12,4 @@ export * from "./RegisterScreen";
 export * from "./orderScreen";
 export * from "./orderDetails";
 export * from "./forgotPassword";
+export * from "./accountDetailScreen";

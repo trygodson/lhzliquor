@@ -34,7 +34,7 @@ export const getFeaturedProductSliderAction = createAsyncThunk("getFeaturedProdu
     .then((response) => {
       console.log(response, "----featured products-----");
 
-      if (response?.status) {
+      if (response?.status === true) {
         return response?.data?.products;
       }
     })

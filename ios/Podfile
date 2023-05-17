@@ -1,9 +1,9 @@
 require_relative '../node_modules/react-native/scripts/react_native_pods'
 require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
-platform :ios, '12.4'
+platform :ios, '13.0'
 install! 'cocoapods', :deterministic_uuids => false
-target 'lhzliquour' do
+target 'LhzLiquor' do
   config = use_native_modules!
   pod 'BVLinearGradient', :path => '../node_modules/react-native-linear-gradient'
 
@@ -26,7 +26,7 @@ target 'lhzliquour' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'lhzliquourTests' do
+  target 'LhzLiquorTests' do
     inherit! :complete
     # Pods for testing
   end

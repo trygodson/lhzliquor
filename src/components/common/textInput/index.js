@@ -211,6 +211,7 @@ const TheTextPhoneInput = ({
               autoCapitalize={autoCapitalize}
               onBlur={() => setChangeOnFocus(false)}
               onFocus={() => setChangeOnFocus(true)}
+              maxLength={10}
               // editable={editable}
               pointerEvents={onPress ? "none" : "auto"}
               // multiline

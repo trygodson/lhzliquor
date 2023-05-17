@@ -7,6 +7,7 @@ export const ApiEndpoints = {
   LOGIN: "auth/login",
   SIGNUP: "auth/register",
   FORGETPASSWORD: "auth/forgot-password",
+  DELETACCOUNT: "auth/user",
   // LOGIN: "/login",
   // SIGNUP: "/sign_up",
 
@@ -28,7 +29,11 @@ export const ApiEndpoints = {
   CHECKOUT: "checkout?coupons[]=",
   SHIPPING: "address/billing",
   CREATEORDER: "order/create",
+  PAYMENTINTENTS: "paymentintents",
 
   //orders
   ORDER: "order/",
+
+  //User Address
+  USER_ADDRESS: "address/billing",
 };

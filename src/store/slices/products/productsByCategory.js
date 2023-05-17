@@ -8,7 +8,7 @@ const initialState = {
   response: [],
 };
 const getProductsByCategorySlice = createSlice({
-  name: "featuredProducts",
+  name: "productsByCategorySlice",
   initialState,
   reducers: {
     productByCategoryDefaultState: (state, action) => initialState,
@@ -20,12 +20,20 @@ const getProductsByCategorySlice = createSlice({
       }
     });
     builder.addCase(getProductsByCategoryandOthersAction.fulfilled, (state, action) => {
-      if (action.payload?.length > 0) {
-        state.response = [...state.response, ...action.payload];
-        state.loading = false;
+      if (action.payload.cat === true) {
+        if (action.payload?.products.length > 0) {
+          state.response = [...action.payload.products];
+        } else {
+          state.response = [];
+        }
       } else {
-        state.listEnd = true;
-        state.loading = false;
+        if (action.payload?.products.length > 0) {
+          state.response = [...state.response, ...action.payload];
+          state.loading = false;
+        } else {
+          state.listEnd = true;
+          state.loading = false;
+        }
       }
     });
     builder.addCase(getProductsByCategoryandOthersAction.rejected, (state, action) => {
@@ -37,13 +45,23 @@ const getProductsByCategorySlice = createSlice({
   },
 });
 export const getProductsByCategoryandOthersAction = createAsyncThunk(
-  "getFeaturedProducts",
-  async ({data}, thunkApi) => {
+  "productsByCategory",
+  async ({data, cat}, thunkApi) => {
     return getFeaturedProducts({queries: data})
       .then((response) => {
         console.log(response, "---from category and other action slice-----");
         if (response.status === true) {
-          return response?.data?.products;
+          if (cat) {
+            return {
+              products: response?.data?.products,
+              cat: true,
+            };
+          } else {
+            return {
+              products: response?.data?.products,
+              cat: true,
+            };
+          }
         }
       })
 

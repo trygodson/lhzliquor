@@ -8,9 +8,7 @@ const FeaturedCategoryItem = ({id, name, count, image}) => {
   const {navigate} = useNavigation();
   return (
     <View style={{width: "100%", flex: 1, marginBottom: 20, marginHorizontal: "1%"}}>
-      <TouchableWithoutFeedback
-        onPress={() => navigate("ShopScreen", {screen: "HomeScreen", params: {category: name}})}
-      >
+      <TouchableWithoutFeedback onPress={() => navigate("ShopStack", {screen: "HomeScreen", params: {category: name}})}>
         <View style={{backgroundColor: AppColors.grayBg, width: "100%", height: 160}}>
           <FastImage
             resizeMode={FastImage.resizeMode.contain}

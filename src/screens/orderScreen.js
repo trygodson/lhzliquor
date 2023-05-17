@@ -66,7 +66,7 @@ const OrderScreen = () => {
                 <Text
                   style={{
                     color: tabs === 1 ? AppColors.white : AppColors.black,
-                    fontSize: 16,
+                    fontSize: 15,
                     fontFamily: fonts.SemiBold,
                   }}
                 >
@@ -89,7 +89,7 @@ const OrderScreen = () => {
                 <Text
                   style={{
                     color: tabs === 2 ? AppColors.white : AppColors.black,
-                    fontSize: 16,
+                    fontSize: 15,
                     fontFamily: fonts.SemiBold,
                   }}
                 >
@@ -112,7 +112,7 @@ const OrderScreen = () => {
                 <Text
                   style={{
                     color: tabs === 3 ? AppColors.white : AppColors.black,
-                    fontSize: 16,
+                    fontSize: 15,
                     fontFamily: fonts.SemiBold,
                   }}
                 >
@@ -152,11 +152,11 @@ const OrderScreen = () => {
                       <OrderImage id={item?.order_id} />
 
                       <View style={{justifyContent: "space-evenly", width: "60%"}}>
-                        {item?.items.map((it) => (
-                          <View style={{flexDirection: "row"}}>
+                        {item?.items.map((it, i) => (
+                          <View style={{flexDirection: "row"}} key={i}>
                             <Text
                               style={{
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontFamily: fonts.Regular,
                                 color: AppColors.black,
                                 flexWrap: "wrap",
@@ -164,7 +164,7 @@ const OrderScreen = () => {
                             >
                               {it?.item_name}
                             </Text>
-                            <Text style={{fontSize: 16, fontFamily: fonts.Bold, color: AppColors.black}}>
+                            <Text style={{fontSize: 14, fontFamily: fonts.Bold, color: AppColors.black}}>
                               {" "}
                               x {it?.quantity}
                             </Text>

@@ -43,13 +43,15 @@ const ShopScreen = ({route, navigation}) => {
     if (category === null || category === undefined) {
       setLoading(true);
       dispatch(productByCategoryDefaultState());
-      dispatch(getProductsByCategoryandOthersAction({data: `?page=${ppage}`})).then(() => setLoading(false));
+      dispatch(getProductsByCategoryandOthersAction({data: `?page=${ppage}`, cat: false})).then(() =>
+        setLoading(false)
+      );
     } else {
       setLoading(true);
       dispatch(productByCategoryDefaultState());
 
-      dispatch(getProductsByCategoryandOthersAction({data: `?page=${ppage}&categories=${category}`})).then(() =>
-        setLoading(false)
+      dispatch(getProductsByCategoryandOthersAction({data: `?page=${ppage}&categories=${category}`, cat: true})).then(
+        () => setLoading(false)
       );
     }
   }, [category]);
@@ -76,8 +78,8 @@ const ShopScreen = ({route, navigation}) => {
   useEffect(() => {
     setULoading(true);
 
-    dispatch(getProductsByCategoryandOthersAction({data: `?page=${page}&categories=${category}`})).then(() =>
-      setULoading(false)
+    dispatch(getProductsByCategoryandOthersAction({data: `?page=${page}&categories=${category}`, cat: false})).then(
+      () => setULoading(false)
     );
   }, [pageNumber]);
 
@@ -92,7 +94,6 @@ const ShopScreen = ({route, navigation}) => {
   //     console.log("scrollToLocation failed: ", e);
   //   }
   // };
-  console.log("scrollToLocation failed: ", response);
   return (
     <View style={{backgroundColor: "white", flex: 1}}>
       <SafeAreaView style={{flex: 1}}>
@@ -131,12 +132,11 @@ const ShopScreen = ({route, navigation}) => {
                   return (
                     <TouchableOpacity
                       style={{
-                        backgroundColor: AppColors.appGreen,
+                        backgroundColor: item?.name === category ? AppColors.appGreen : AppColors.appGreen30,
                         paddingHorizontal: 10,
                         paddingVertical: 5,
                         alignItems: "center",
                         borderRadius: 5,
-                        opacity: item?.name === category ? 1 : 0.3,
                         marginRight: 20,
                       }}
                       key={i}
@@ -166,14 +166,13 @@ const ShopScreen = ({route, navigation}) => {
               <Loader2 />
             </View>
           ) : (
-            response &&
-            response.length > 0 && (
+            response && (
               <View style={{paddingTop: 13, marginBottom: height * 0.3}}>
                 <FlatList
-                  ref={listRef}
+                  // ref={listRef}
                   data={response}
                   numColumns={2}
-                  showsVerticalScrollIndicator={true}
+                  showsVerticalScrollIndicator={false}
                   keyExtractor={(item) => `${item?.name}_${item?.id}`}
                   renderItem={({item, index}) => (
                     <FeaturedItem
@@ -184,18 +183,30 @@ const ShopScreen = ({route, navigation}) => {
                       images={item.image}
                     />
                   )}
-                  ListEmptyComponent={
+                  ListEmptyComponent={() => (
                     <View style={{justifyContent: "center", alignItems: "center", width: width, height: height * 0.4}}>
-                      <Text style={{fontSize: 21, fontFamily: fonts.SemiBold, color: AppColors.black}}>
-                        No Products Available for {category ?? ""}
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontFamily: fonts.SemiBold,
+                          color: AppColors.black,
+                          flexWrap: "wrap",
+                          textAlign: "center",
+                        }}
+                      >
+                        No Products Available {category ? `for ${category}` : ""}
                       </Text>
                     </View>
-                  }
-                  onEndReachedThreshold={0.2}
+                  )}
+                  onEndReachedThreshold={0.23}
                   ListFooterComponent={
                     <>
                       {uLoading && <Loader3 loading={uLoading} />}
-                      {listEnd && <Text style={{color: AppColors.black, fontSize: 14}}>No More Items Available</Text>}
+                      {listEnd && (
+                        <View style={{width}}>
+                          <Text style={{color: AppColors.black, fontSize: 14}}>No More Items Available</Text>
+                        </View>
+                      )}
                     </>
                   }
                   onEndReached={({distanceFromEnd}) => {

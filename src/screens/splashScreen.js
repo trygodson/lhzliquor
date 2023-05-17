@@ -11,6 +11,7 @@ import {getFeaturedCategoryAction} from "../store/slices/products/featuredCatego
 import {getFeaturedProductSliderAction} from "../store/slices/products/featuredProduct";
 // import {getWishListItemsActions} from "../store/slices/wishlist/wishlist";
 import AppColors from "../utils/ColorApp";
+import {getUserAddressAction} from "../store/slices/userAddress/userAddress";
 
 const SplashScreen = () => {
   const storedispatch = useDispatch();
@@ -24,10 +25,12 @@ const SplashScreen = () => {
           storedispatch(setLogin(false));
           dispatch(StackActions.replace("AppStack", {}));
         } else {
+          storedispatch(getUserAddressAction());
           storedispatch(setLogin(true));
+
           dispatch(StackActions.replace("AppStack", {}));
         }
-      }, 2500)
+      }, 3000)
     );
   };
   useEffect(() => {

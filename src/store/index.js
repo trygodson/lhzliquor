@@ -15,6 +15,7 @@ import wishListSlice from "./slices/wishlist/wishlist";
 import loginSlice from "./slices/auth/loginSlice";
 import registerSlice from "./slices/auth/registerSlice";
 import getOrdersSlice from "./slices/orders/orders";
+import userAddressSlice from "./slices/userAddress/userAddress";
 
 export const store = configureStore({
   reducer: {
@@ -33,6 +34,7 @@ export const store = configureStore({
     wishList: wishListSlice,
     cart: cartSlice,
     getOrders: getOrdersSlice,
+    userAddress: userAddressSlice,
   },
   middleware: (getDefaultMiddleware) => {
     return getDefaultMiddleware().concat(toastFunc);

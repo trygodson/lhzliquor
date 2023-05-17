@@ -4,22 +4,22 @@ import Carousel, {Pagination} from "react-native-new-snap-carousel";
 import RenderHTML from "react-native-render-html";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useDispatch, useSelector} from "react-redux";
+import Share from "react-native-share";
 import {HeartIcon2, HeartIconFilled2} from "../assets/icons/heart2";
 import {CustomHeader2, Loader, Loader2} from "../components/common";
 import {CarouselItemPicture, ItemMetaDetails} from "../components/itemDetails";
-import {GET_STORAGE_ITEM} from "../utils/storage";
+import FaceBookIcon from "../assets/icons/fbsmall.svg";
+import WhatsAppIcon from "../assets/icons/whatsapp.svg";
+import InstagramIcon from "../assets/icons/instagram.svg";
 import {getProductDetailsAction} from "../store/slices/products/productDetails";
 import {addToWishList} from "../store/slices/wishlist/wishlist";
 import AppColors from "../utils/ColorApp";
 import {fonts} from "../utils/constants";
-import {ApiEndpoints, SHOP_BASE_URL} from "../utils/endPoints";
-import {dummySlider} from "../utils/others";
 import {customToast} from "../utils/toast";
 import Global from "../services/global";
 import {addtocart} from "../services/cart";
 import {cartCountAction} from "../store/slices/cart/cartcountSlice";
 import {navigationRef} from "../Main";
-import {StackActions} from "@react-navigation/native";
 
 const ItemDetails = ({route}) => {
   let id = route.params.id;
@@ -64,6 +64,62 @@ const ItemDetails = ({route}) => {
           setButtonDisable(false);
         });
     }
+  };
+
+  const onShareWhatsapp = () => {
+    Share.shareSingle({
+      social: Share.Social.WHATSAPP,
+
+      title: "LHZLIQUOR",
+      url: `https://lhzliquor.com/product/${response?.name}`,
+    })
+      .then((res) => {
+        console.log(res, "share opened");
+      })
+      .catch((err) => {
+        Share.open({
+          title: "LHZLIQUOR",
+          url: `https://lhzliquor.com/product/${response?.name}`,
+        })
+          .then((result) => console.log(result))
+          .catch((err) => console.log(err));
+      });
+  };
+  const onShareFacebook = () => {
+    Share.shareSingle({
+      social: Share.Social.FACEBOOK,
+      title: "LHZLIQUOR",
+      url: `https://lhzliquor.com/product/${response?.name}`,
+    })
+      .then((res) => {
+        console.log(res, "share opened");
+      })
+      .catch((err) => {
+        Share.open({
+          title: "LHZLIQUOR",
+          url: `https://lhzliquor.com/product/${response?.name}`,
+        })
+          .then((result) => console.log(result))
+          .catch((err) => console.log(err));
+      });
+  };
+  const onShareInstagram = () => {
+    Share.shareSingle({
+      social: Share.Social.INSTAGRAM_STORIES,
+      title: "LHZLIQUOR",
+      url: `https://lhzliquor.com/product/${response?.name}`,
+    })
+      .then((res) => {
+        console.log(res, "share opened");
+      })
+      .catch((err) => {
+        Share.open({
+          title: "LHZLIQUOR",
+          url: `https://lhzliquor.com/product/${response?.name}`,
+        })
+          .then((result) => console.log(result))
+          .catch((err) => console.log(err));
+      });
   };
 
   return (
@@ -159,7 +215,7 @@ const ItemDetails = ({route}) => {
                       width: "100%",
                       borderBottomColor: AppColors.lightGray2,
                       borderBottomWidth: 1,
-                      paddingBottom: 30,
+                      paddingBottom: 14,
                       marginBottom: 20,
                     }}
                   >
@@ -244,7 +300,24 @@ const ItemDetails = ({route}) => {
                         )}
                       </TouchableOpacity>
                     </View>
+                    <View style={{flexDirection: "row", alignItems: "center", marginTop: 10}}>
+                      <Text
+                        style={{fontSize: 14, fontFamily: fonts.Medium, color: AppColors.appGreen, marginRight: 22}}
+                      >
+                        Share Now
+                      </Text>
+                      <TouchableOpacity style={{marginRight: 12}} onPress={() => onShareFacebook()}>
+                        <FaceBookIcon />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={{marginRight: 12}} onPress={() => onShareWhatsapp()}>
+                        <WhatsAppIcon />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => onShareInstagram()}>
+                        <InstagramIcon />
+                      </TouchableOpacity>
+                    </View>
                   </View>
+
                   <View style={{justifyContent: "flex-start", flexDirection: "row", marginBottom: 20}}>
                     <TouchableOpacity
                       style={

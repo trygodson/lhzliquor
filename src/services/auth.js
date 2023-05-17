@@ -31,3 +31,13 @@ export async function ResetPasswordService(payload) {
     throw error;
   }
 }
+export async function deleteAccountService(payload) {
+  let header = {};
+
+  try {
+    const response = await shopAPi(ApiEndpoints.DELETACCOUNT, null, "DELETE", payload, false, header);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}

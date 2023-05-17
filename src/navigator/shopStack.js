@@ -9,9 +9,9 @@ const ShopStack = () => {
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName="HomeScreen"
+      initialRouteName="ShopScreen"
     >
-      <Stack.Screen component={ShopScreen} name="HomeScreen" options={{headerShown: false, gestureEnabled: false}} />
+      <Stack.Screen component={ShopScreen} name="ShopScreen" options={{headerShown: false, gestureEnabled: false}} />
       <Stack.Screen
         component={SearchScreen}
         name="SearchScreen"

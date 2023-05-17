@@ -16,6 +16,7 @@ const HomeScreen = () => {
   const {width} = useWindowDimensions();
   const [sliderIndex, setSliderIndex] = useState(0);
   const {response, loading} = useSelector((state) => state.getFeaturesSliderProducts);
+
   return (
     <View style={{backgroundColor: "white", flex: 1}}>
       <SafeAreaView style={{flex: 1}}>
@@ -39,7 +40,7 @@ const HomeScreen = () => {
                   )}
                   sliderWidth={width}
                   itemWidth={width}
-                  // onSnapToItem={(index) => setSliderIndex(index)}
+                  onSnapToItem={(index) => setSliderIndex(index)}
                   loop={true}
                   bounces={false}
                   autoplay

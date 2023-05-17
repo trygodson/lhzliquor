@@ -17,7 +17,7 @@ const FeaturedCategory = () => {
         <Text style={{color: AppColors.lightGray, fontSize: 20, fontFamily: fonts.Regular}}>LhzLiquor Collection</Text>
         <Text style={{color: AppColors.black, fontSize: 26, fontFamily: fonts.SemiBold}}>FEATURED CATEGORIES</Text>
         <Text style={{color: "#333333", fontSize: 16, fontFamily: fonts.Regular, textAlign: "center", width: "96%"}}>
-          LhzLiquor has the best and quality liquor
+          Lhz Liquor has the best and quality liquor
         </Text>
       </View>
 

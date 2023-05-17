@@ -53,6 +53,7 @@ const BottomTab = () => {
           paddingVertical: 5,
           paddingBottom: Math.round(verticalScale(5)),
         },
+        unmountOnBlur: true,
         tabBarHideOnKeyboard: true,
       }}
     >
@@ -80,32 +81,8 @@ const BottomTab = () => {
         }}
       />
       <Tab.Screen
-        component={WishListScreen}
-        name="WishListScreen"
-        options={{
-          tabBarIcon: ({focused}) => {
-            return (
-              <>
-                <HeartIcon color={focused ? AppColors.appGreen : AppColors.black} />
-
-                <Text
-                  style={{
-                    color: focused ? AppColors.appGreen : AppColors.black,
-                    fontSize: 11,
-                    fontFamily: fonts.Regular,
-                  }}
-                >
-                  Wishlist
-                </Text>
-              </>
-            );
-          },
-        }}
-      />
-
-      <Tab.Screen
         component={ShopStack}
-        name="ShopScreen"
+        name="ShopStack"
         options={{
           tabBarIcon: ({focused}) => {
             return (
@@ -136,6 +113,31 @@ const BottomTab = () => {
           },
         }}
       />
+
+      <Tab.Screen
+        component={WishListScreen}
+        name="WishListScreen"
+        options={{
+          tabBarIcon: ({focused}) => {
+            return (
+              <>
+                <HeartIcon color={focused ? AppColors.appGreen : AppColors.black} />
+
+                <Text
+                  style={{
+                    color: focused ? AppColors.appGreen : AppColors.black,
+                    fontSize: 11,
+                    fontFamily: fonts.Regular,
+                  }}
+                >
+                  Wishlist
+                </Text>
+              </>
+            );
+          },
+        }}
+      />
+
       <Tab.Screen
         component={AccountStack}
         name="AccountStack"

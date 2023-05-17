@@ -1,25 +1,24 @@
 import CheckBox from "@react-native-community/checkbox";
 import {CommonActions, StackActions, useNavigation} from "@react-navigation/native";
-// import {useStripe} from "@stripe/stripe-react-native";
 import {Formik} from "formik";
 import * as Yup from "yup";
 import {useState, useEffect} from "react";
-import {ScrollView, View, Text, TouchableOpacity, Image, useWindowDimensions, Keyboard} from "react-native";
+import {ScrollView, View, Text, TouchableOpacity, Image, useWindowDimensions, Keyboard, Pressable} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useDispatch, useSelector} from "react-redux";
 import {CustomHeader2, Loader2} from "../components/common";
-import {CustomDropDownCountry, TheTextInput, TheTextPhoneInput} from "../components/common/textInput";
-import {createOrderAction} from "../store/slices/cart/createOrder";
-import {getPaymentGatewayAction} from "../store/slices/cart/paymentGateways";
+import {TheTextInput, TheTextPhoneInput} from "../components/common/textInput";
 import AppColors from "../utils/ColorApp";
 import {fonts} from "../utils/constants";
 import {countryList} from "../utils/others";
-import {customToast} from "../utils/toast";
-import Stripe from "react-native-stripe-api";
-import {checkOutService, createOrderService, getAddressService} from "../services/checkout";
+import {checkOutService, createOrderService, getAddressService, paymentIntentService} from "../services/checkout";
 import {changeLoading} from "../store/slices/loader/loader";
 import {navigationRef} from "../Main";
 import {cartCountAction} from "../store/slices/cart/cartcountSlice";
+import moment from "moment";
+import {useStripe} from "@stripe/stripe-react-native";
+import CashIcon from "../assets/icons/cash.svg";
+import CardIcon from "../assets/icons/creditcard.svg";
 
 const validationSchema = Yup.object().shape({
   first_name: Yup.string()
@@ -32,11 +31,11 @@ const validationSchema = Yup.object().shape({
     .min(3, "3 characters above long"),
   email: Yup.string().email("Invalid email address").required("Email is Required"),
   address_1: Yup.string().required("Address  is required"),
-  address_2: Yup.string().required("Address 2 is required"),
-  city: Yup.string().required("city is required"),
-  state: Yup.string().required("State is required"),
+  // address_2: Yup.string().required("Address 2 is required"),
+  // city: Yup.string().required("city is required"),
+  // state: Yup.string().required("State is required"),
   postcode: Yup.string().required("postcode is required"),
-  country: Yup.string().required("country is required"),
+  // country: Yup.string().required("country is required"),
   phone: Yup.string().required("phone is required"),
   payment_method: Yup.string().required("Payment Method is required"),
   payment_method_title: Yup.string().required("Payment Method Title is required"),
@@ -47,38 +46,32 @@ const CheckOutScreen = ({route, navigation}) => {
   const {navigate} = useNavigation();
   const [stripeKey, setStripeKey] = useState();
   const dispatch = useDispatch();
-  const [cartItem, setcartItem] = useState();
-  const [cartTotal, setCartTotal] = useState();
-  const [cardDetails, setCardDetails] = useState({
-    number: "",
-    cvc: "",
-    exp_month: "",
-    exp_year: "",
-  });
+  let otherAdd = {
+    address_2: "Singapore",
+    city: "Singapore",
+    state: "Singapore",
+    country: "Singapore",
+  };
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     address_1: "",
-    address_2: "",
-    city: "",
-    state: "",
     postcode: "",
-    country: "",
     email: "",
     phone: "",
     payment_method: "",
     payment_method_title: "",
   });
-  const [shipping, setShipping] = useState({
-    first_name: "",
-    last_name: "",
-    address_1: "",
-    address_2: "",
-    city: "",
-    state: "",
-    postcode: "",
-    country: "",
-  });
+  // const [shipping, setShipping] = useState({
+  //   first_name: "",
+  //   last_name: "",
+  //   address_1: "",
+  //   address_2: "",
+  //   city: "",
+  //   state: "",
+  //   postcode: "",
+  //   country: "",
+  // });
 
   const [countryData, setCountryData] = useState(
     countryList.map((item) => ({label: item.name, value: item?.sortname}))
@@ -87,14 +80,11 @@ const CheckOutScreen = ({route, navigation}) => {
     countryList.map((item) => ({label: item.name, value: item?.sortname}))
   );
   const [thePaymentMethod, setthePaymentMethod] = useState();
-  const [phoneCode, setPhoneCode] = useState();
+  const [cartItem, setCartItem] = useState();
+  const [cartTotal, setCartTotal] = useState();
   const [paymentMethod, setPaymentMethod] = useState();
-  // const [lineItems, setLineItems] = useState(cart.map((item) => ({product_id: item.id, quantity: item.quantity})));
-  // const [shippingLines, setShippingLines] = useState({
-  //   method_id: "flat_rate",
-  //   method_title: "Flat rate",
-  //   total: "10.00",
-  // });
+  const {initPaymentSheet, presentPaymentSheet} = useStripe();
+  const [paymentIntent, setPaymentIntent] = useState();
 
   const [methodType, setMethodType] = useState({
     bankTransfer: false,
@@ -107,117 +97,214 @@ const CheckOutScreen = ({route, navigation}) => {
   };
 
   const {width, height} = useWindowDimensions();
-
-  const createOrder = (v) => {
-    if (v?.payment_method === "stripe") {
-      if (
-        cardDetails.number === "" ||
-        cardDetails.cvc === "" ||
-        cardDetails.exp_month === "" ||
-        cardDetails.exp_year === ""
-      ) {
-        customToast("Please complete Card Fields");
-      } else {
-        dispatch(changeLoading(true));
-        const client = new Stripe(stripeKey);
-        client
-          .createToken({
-            number: cardDetails.number,
-            exp_month: cardDetails.exp_month,
-            exp_year: cardDetails.exp_year,
-            cvc: cardDetails.cvc,
-            address_line1: v.address_1,
-            address_line2: v.address_2,
-            address_city: v.city,
-            address_state: v.state,
-            address_zip: v.phone,
-            address_country: v.country,
-          })
-          .then((tk) => {
-            console.log(tk, "----stripe token -----");
-            if (Object.keys(tk)[0] != "error") {
-              console.log(
-                {...v, stripe_card_token: tk?.id, coupons: route.params.coupon},
-                "------object for create order---"
-              );
-              createOrderService({...v, stripe_card_token: tk?.id, coupons: route.params.coupon})
-                .then((res) => {
-                  console.log(res, "------create order from stripe response-----");
-                  dispatch(changeLoading(false));
-
-                  if (res.status === true) {
-                    dispatch(cartCountAction());
-                    navigationRef.dispatch(StackActions.replace("SuccessScreen", {id: res?.data?.order_id}));
-                  } else {
-                    alert(JSON.stringify(res.errors));
-                  }
-                })
-                .catch((err) => {
-                  console.log(err, "---create order error----");
-                  dispatch(changeLoading(false));
-                  alert(JSON.stringify(err));
-                });
-            } else {
-              dispatch(changeLoading(false));
-
-              alert(tk?.error?.message);
-            }
-          })
-          .catch((err) => {
-            alert(JSON.stringify(err));
-            dispatch(changeLoading(false));
-
-            console.log(err, "------stripe token error----");
+  const getPaymentIntent = () => {
+    paymentIntentService({
+      coupons: "",
+      currency: "SGD",
+    })
+      .then((intentRes) => {
+        console.log(intentRes, "------intrnt Response----");
+        if (intentRes.status === true) {
+          setPaymentIntent(intentRes.data);
+          initPaymentSheet({
+            merchantDisplayName: "Lhz Liquor",
+            customerId: intentRes.data?.customer,
+            customerEphemeralKeySecret: intentRes.data?.ephemeralKey,
+            paymentIntentClientSecret: intentRes.data?.paymentIntent,
+            // Set `allowsDelayedPaymentMethods` to true if your business can handle payment
+            //methods that complete payment after a delay, like SEPA Debit and Sofort.
+            allowsDelayedPaymentMethods: true,
+            defaultBillingDetails: {
+              name: "Jane Doe",
+            },
           });
-      }
-    } else if (v?.payment_method === "cod") {
-      dispatch(changeLoading(true));
-      createOrderService({...v, coupons: route.params.coupon})
-        .then((res) => {
-          dispatch(changeLoading(false));
-          if (res.status === true) {
-            dispatch(cartCountAction());
-            // navigationRef.dispatch(
-            //   CommonActions.reset({
-            //     index: 1,
-            //     routes: [{name: "SuccessScreen", params: {id: res?.data?.order_id}}],
-            //     // actions: [navigation.navigate("SuccessScreen", {id: res?.data?.order_id})],
-            //   })
-            // );
-            navigationRef.dispatch(StackActions.replace("SuccessScreen", {id: res?.data?.order_id}));
+        } else {
+          if (intentRes.errors) {
+            alert(JSON.stringify(intentRes.errors));
+          } else if (intentRes.error) {
+            alert(JSON.stringify(intentRes.error));
           }
-        })
-        .catch((err) => {
-          dispatch(changeLoading(false));
-          console.log(err);
-        });
+        }
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const openPaymentSheet = async (val) => {
+    if (val?.payment_method === "stripe") {
+      try {
+        const payRes = await presentPaymentSheet();
+
+        if (!payRes.error) {
+          createStripeOrder(val);
+        } else {
+          alert("Unable To Make Payment");
+        }
+      } catch (error) {
+        alert("Unable To Make Payment");
+      }
+    } else {
+      createCodOrder(val);
     }
+  };
+  // const createOrder = (v) => {
+  //   if (v?.payment_method === "stripe") {
+  //     if (
+  //       cardDetails.number === "" ||
+  //       cardDetails.cvc === "" ||
+  //       cardDetails.exp_month === "" ||
+  //       cardDetails.exp_year === ""
+  //     ) {
+  //       customToast("Please complete Card Fields");
+  //     } else {
+  //       dispatch(changeLoading(true));
+
+  //       // console.log(stripeKey, "-----stripe key----");
+  //       const client = new Stripe(stripeKey);
+  //       client
+  //         .createToken({
+  //           number: cardDetails.number,
+  //           exp_month: cardDetails.exp_month,
+  //           exp_year: cardDetails.exp_year,
+  //           cvc: cardDetails.cvc,
+  //           address_line1: v.address_1,
+  //           address_line2: v.address_2,
+  //           address_city: v.city,
+  //           address_state: v.state,
+  //           address_zip: v.phone,
+  //           address_country: v.country,
+  //         })
+  //         .then((tk) => {
+  //           console.log(tk.id, "----stripe token -----");
+  //           if (Object.keys(tk)[0] != "error") {
+  //             console.log(
+  //               {...v, stripe_card_token: tk?.id, coupons: route.params.coupon},
+  //               "------object for create order---"
+  //             );
+  //             createOrderService({...v, stripe_card_token: tk?.id, coupons: route.params.coupon})
+  //               .then((res) => {
+  //                 console.log(res, "------create order from stripe response-----");
+  //                 dispatch(changeLoading(false));
+
+  //                 if (res.status === true) {
+  //                   dispatch(cartCountAction());
+  //                   navigationRef.dispatch(StackActions.replace("SuccessScreen", {id: res?.data?.order_id}));
+  //                 } else {
+  //                   alert(JSON.stringify(res.errors));
+  //                 }
+  //               })
+  //               .catch((err) => {
+  //                 console.log(err, "---create order error----");
+  //                 dispatch(changeLoading(false));
+  //                 alert(JSON.stringify(err));
+  //               });
+  //           } else {
+  //             dispatch(changeLoading(false));
+
+  //             alert(tk?.error?.message);
+  //           }
+  //         })
+  //         .catch((err) => {
+  //           alert(JSON.stringify(err));
+  //           dispatch(changeLoading(false));
+
+  //           console.log(err, "------stripe token error----");
+  //         });
+  //     }
+  //   } else if (v?.payment_method === "cod") {
+  //     dispatch(changeLoading(true));
+  //     createOrderService({...v, coupons: route.params.coupon})
+  //       .then((res) => {
+  //         dispatch(changeLoading(false));
+  //         if (res.status === true) {
+  //           dispatch(cartCountAction());
+  //           // navigationRef.dispatch(
+  //           //   CommonActions.reset({
+  //           //     index: 1,
+  //           //     routes: [{name: "SuccessScreen", params: {id: res?.data?.order_id}}],
+  //           //     // actions: [navigation.navigate("SuccessScreen", {id: res?.data?.order_id})],
+  //           //   })
+  //           // );
+  //           navigationRef.dispatch(StackActions.replace("SuccessScreen", {id: res?.data?.order_id}));
+  //         }
+  //       })
+  //       .catch((err) => {
+  //         dispatch(changeLoading(false));
+  //         console.log(err);
+  //       });
+  //   }
+  // };
+  const createCodOrder = (v) => {
+    dispatch(changeLoading(true));
+    createOrderService({...v, ...otherAdd, coupons: route.params.coupon})
+      .then((res) => {
+        dispatch(changeLoading(false));
+        if (res.status === true) {
+          dispatch(cartCountAction());
+          navigationRef.dispatch(StackActions.replace("SuccessScreen", {id: res?.data?.order_id}));
+        } else {
+          alert(JSON.stringify(res.errors));
+        }
+      })
+      .catch((err) => {
+        dispatch(changeLoading(false));
+        console.log(err);
+      });
+  };
+  const createStripeOrder = (v) => {
+    dispatch(changeLoading(true));
+
+    createOrderService({
+      ...v,
+      ...otherAdd,
+      paid_date: moment().unix(),
+      customer_id: paymentIntent?.customer,
+      payment_intent: paymentIntent?.paymentIntent,
+      currency: "SGD",
+      coupons: route.params.coupon,
+    })
+      .then((res) => {
+        console.log(res, "------create order from stripe response-----");
+        dispatch(changeLoading(false));
+
+        if (res.status === true) {
+          dispatch(cartCountAction());
+          navigationRef.dispatch(StackActions.replace("SuccessScreen", {id: res?.data?.order_id}));
+        } else {
+          alert(JSON.stringify(res.errors));
+        }
+      })
+      .catch((err) => {
+        console.log(err, "---create order error----");
+        dispatch(changeLoading(false));
+        alert(JSON.stringify(err));
+      });
   };
   const fetchCheckOut = () => {
     setLoading(true);
     checkOutService()
       .then((res) => {
         setLoading(false);
-        console.log(res, "-------res from checkourt-----");
         if (res.status === true) {
           setFormData((prev) => ({
             ...prev,
             address_1: res?.data?.customer?.address_1,
-            address_2: res?.data?.customer?.address_2,
-            city: res?.data?.customer?.city,
-            country: res?.data?.customer?.country,
             email: res?.data?.customer?.email,
-            first_name: res?.data?.customer?.first_name,
-            last_name: res?.data?.customer?.last_name,
+            first_name: "",
+            last_name: "",
+            // first_name: res?.data?.customer?.first_name,
+            // last_name: res?.data?.customer?.last_name,
             phone: res?.data?.customer?.phone,
             postcode: res?.data?.customer?.postcode,
-            state: res?.data?.customer?.state,
           }));
-          setcartItem(res?.data?.cart_items);
+          setCartItem(res?.data?.cart_items);
           setCartTotal(res?.data?.cart_totals);
           setthePaymentMethod(Object.keys(res?.data?.payment_gateways ?? {}));
           if (res?.data?.payment_gateways?.stripe) {
-            setStripeKey(res?.data?.payment_gateways?.stripe.test_secret_key);
+            console.log(
+              res?.data?.payment_gateways?.stripe.secret_key,
+              "res?.data?.payment_gateways?.stripe.secret_key"
+            );
+            setStripeKey(res?.data?.payment_gateways?.stripe.secret_key);
           }
         }
       })
@@ -229,6 +316,7 @@ const CheckOutScreen = ({route, navigation}) => {
 
   useEffect(() => {
     fetchCheckOut();
+    getPaymentIntent();
   }, []);
   return (
     <View style={{backgroundColor: "white", flex: 1}}>
@@ -241,33 +329,151 @@ const CheckOutScreen = ({route, navigation}) => {
             <>
               <View>
                 <View>
-                  <Text
-                    style={{fontSize: 18, fontFamily: fonts.ExtraBold, color: AppColors.appGreen, marginVertical: 5}}
-                  >
-                    BILLING DETAILS
-                  </Text>
                   <Formik
                     validationSchema={validationSchema}
+                    validateOnMount
+                    validateOnChange
                     enableReinitialize
-                    validateOnBlur
                     initialValues={formData}
-                    onSubmit={(v) => createOrder(v)}
+                    onSubmit={(v) => openPaymentSheet(v)}
                   >
                     {({
                       handleBlur,
                       handleChange,
                       handleSubmit,
                       values,
-                      errors,
-                      touched,
                       setFieldValue,
+                      setFieldTouched,
                       isSubmitting,
                       isValid,
                     }) => {
                       return (
                         <>
+                          <View style={{marginBottom: 15}}>
+                            <Text
+                              style={{
+                                fontSize: 18,
+                                fontFamily: fonts.Bold,
+                                color: AppColors.appGreen,
+                                marginBottom: 10,
+                              }}
+                            >
+                              CHOOSE PAYMENT METHOD
+                            </Text>
+                            <View style={{flexDirection: "row", justifyContent: "space-between"}}>
+                              {thePaymentMethod &&
+                                thePaymentMethod.length > 0 &&
+                                thePaymentMethod.map((item, i) => {
+                                  if (item === "cod") {
+                                    return (
+                                      <Pressable
+                                        style={{
+                                          alignItems: "center",
+                                          paddingVertical: 15,
+                                          paddingHorizontal: 10,
+                                          elevation: 4,
+                                          backgroundColor: AppColors.white,
+                                          borderWidth: 2,
+                                          borderRadius: 10,
+                                          borderColor: methodType.cod ? AppColors.appGreen : AppColors.white,
+                                          flexGrow: 1,
+                                        }}
+                                        onPress={() => {
+                                          if (methodType.cod === false) {
+                                            setFieldValue("payment_method", "cod");
+                                            setFieldValue("payment_method_title", "Cash on Delivery");
+                                            setPaymentMethod({
+                                              payment_method: "cod",
+                                              payment_method_title: "Cash on Delivery",
+                                            });
+                                            setMethodType((prev) => ({
+                                              bankTransfer: false,
+                                              check: false,
+                                              cod: true,
+                                              stripe: false,
+                                            }));
+                                          } else {
+                                            setFieldValue("payment_method", "");
+                                            setFieldValue("payment_method_title", "");
+
+                                            setPaymentMethod(null);
+                                            setMethodType((prev) => ({
+                                              bankTransfer: false,
+                                              check: false,
+                                              cod: false,
+                                              stripe: false,
+                                            }));
+                                          }
+                                        }}
+                                      >
+                                        <CashIcon />
+                                        <Text style={{fontSize: 12, fontFamily: fonts.Regular}}>Cash On Delivery</Text>
+                                      </Pressable>
+                                    );
+                                  } else if (item === "stripe" && paymentIntent !== null) {
+                                    return (
+                                      <TouchableOpacity
+                                        style={{
+                                          alignItems: "center",
+                                          paddingVertical: 15,
+                                          paddingHorizontal: 10,
+                                          elevation: 4,
+                                          backgroundColor: AppColors.white,
+                                          borderWidth: 2,
+                                          borderRadius: 10,
+                                          borderColor: methodType.stripe ? AppColors.appGreen : AppColors.white,
+                                          flexGrow: 1,
+                                        }}
+                                        onPress={() => {
+                                          if (methodType.stripe === false) {
+                                            setFieldValue("payment_method", "stripe");
+                                            setFieldValue("payment_method_title", "Credit Card (Stripe)");
+                                            setPaymentMethod({
+                                              payment_method: "cod",
+                                              payment_method_title: "Cash on Delivery",
+                                            });
+                                            setMethodType((prev) => ({
+                                              bankTransfer: false,
+                                              check: false,
+                                              cod: false,
+                                              stripe: true,
+                                            }));
+                                          } else {
+                                            setFieldValue("payment_method", "");
+                                            setFieldValue("payment_method_title", "");
+
+                                            setPaymentMethod(null);
+                                            setMethodType((prev) => ({
+                                              bankTransfer: false,
+                                              check: false,
+                                              cod: false,
+                                              stripe: false,
+                                            }));
+                                          }
+                                        }}
+                                      >
+                                        <CardIcon />
+                                        <Text style={{fontSize: 12, fontFamily: fonts.Regular}}>Pay With Card</Text>
+                                      </TouchableOpacity>
+                                    );
+                                  }
+                                })}
+                            </View>
+                          </View>
+
+                          <Text
+                            style={{
+                              fontSize: 18,
+                              fontFamily: fonts.ExtraBold,
+                              color: AppColors.appGreen,
+                              marginVertical: 5,
+                            }}
+                          >
+                            BILLING DETAILS
+                          </Text>
+
                           <TheTextInput
-                            label={"First Name"}
+                            label={"First Name *"}
                             onChangeText={handleChange("first_name")}
                             onBlur={handleBlur("first_name")}
                             customStyle={{marginTop: 0, marginBottom: 40, marginTop: 10}}
@@ -279,7 +485,7 @@ const CheckOutScreen = ({route, navigation}) => {
                             // preicon={EmailIcon}
                           />
                           <TheTextInput
-                            label={"Last Name"}
+                            label={"Last Name *"}
                             onChangeText={handleChange("last_name")}
                             onBlur={handleBlur("last_name")}
                             customStyle={{marginTop: 0, marginBottom: 40, marginTop: 10}}
@@ -291,7 +497,7 @@ const CheckOutScreen = ({route, navigation}) => {
                             // preicon={EmailIcon}
                           />
                           <TheTextInput
-                            label={"Email"}
+                            label={"Email *"}
                             onChangeText={handleChange("email")}
                             onBlur={handleBlur("email")}
                             customStyle={{marginTop: 0, marginBottom: 40, marginTop: 10}}
@@ -302,8 +508,22 @@ const CheckOutScreen = ({route, navigation}) => {
                             icon={false}
                             // preicon={EmailIcon}
                           />
+                          <TheTextPhoneInput
+                            label={"Phone *"}
+                            onChangeText={handleChange("phone")}
+                            onBlur={handleBlur("phone")}
+                            customStyle={{marginTop: 0, marginBottom: 40, marginTop: 10}}
+                            text={values.phone}
+                            validate={true}
+                            keyboardType={"numeric"}
+                            multiValidateMode={true}
+                            phoneCode={65}
+                            onSubmitEditing={onDismiss}
+                            icon={true}
+                            // preicon={EmailIcon}
+                          />
                           <TheTextInput
-                            label={"Address One"}
+                            label={"Address *"}
                             onChangeText={handleChange("address_1")}
                             onBlur={handleBlur("address_1")}
                             customStyle={{marginTop: 0, marginBottom: 40, marginTop: 10}}
@@ -314,7 +534,7 @@ const CheckOutScreen = ({route, navigation}) => {
                             icon={false}
                             // preicon={EmailIcon}
                           />
-                          <TheTextInput
+                          {/* <TheTextInput
                             label={"Address Two"}
                             onChangeText={handleChange("address_2")}
                             onBlur={handleBlur("address_2")}
@@ -325,8 +545,8 @@ const CheckOutScreen = ({route, navigation}) => {
                             onSubmitEditing={onDismiss}
                             icon={false}
                             // preicon={EmailIcon}
-                          />
-                          <CustomDropDownCountry
+                          /> */}
+                          {/* <CustomDropDownCountry
                             label={"Country*"}
                             items={countryData}
                             setItems={setCountryData}
@@ -338,9 +558,9 @@ const CheckOutScreen = ({route, navigation}) => {
                             // setValue={handleChange("country")}
                             value={values.country}
                             customPlaceHolderStyle={{fontSize: 14}}
-                          />
+                          /> */}
 
-                          <TheTextInput
+                          {/* <TheTextInput
                             label={"State"}
                             onChangeText={handleChange("state")}
                             onBlur={handleBlur("state")}
@@ -351,9 +571,9 @@ const CheckOutScreen = ({route, navigation}) => {
                             onSubmitEditing={onDismiss}
                             icon={false}
                             // preicon={EmailIcon}
-                          />
+                          /> */}
 
-                          <TheTextInput
+                          {/* <TheTextInput
                             label={"Town/City"}
                             onChangeText={handleChange("city")}
                             onBlur={handleBlur("city")}
@@ -364,7 +584,7 @@ const CheckOutScreen = ({route, navigation}) => {
                             onSubmitEditing={onDismiss}
                             icon={false}
                             // preicon={EmailIcon}
-                          />
+                          /> */}
                           <TheTextInput
                             label={"PostCode *"}
                             onChangeText={handleChange("postcode")}
@@ -376,20 +596,6 @@ const CheckOutScreen = ({route, navigation}) => {
                             multiValidateMode={true}
                             onSubmitEditing={onDismiss}
                             icon={false}
-                            // preicon={EmailIcon}
-                          />
-                          <TheTextPhoneInput
-                            label={"Phone"}
-                            onChangeText={handleChange("phone")}
-                            onBlur={handleBlur("phone")}
-                            customStyle={{marginTop: 0, marginBottom: 40, marginTop: 10}}
-                            text={values.phone}
-                            validate={true}
-                            keyboardType={"numeric"}
-                            multiValidateMode={true}
-                            phoneCode={phoneCode}
-                            onSubmitEditing={onDismiss}
-                            icon={true}
                             // preicon={EmailIcon}
                           />
 
@@ -547,100 +753,7 @@ const CheckOutScreen = ({route, navigation}) => {
                                 </View>
                               </View>
 
-                              {thePaymentMethod &&
-                                thePaymentMethod.length > 0 &&
-                                thePaymentMethod.map((item, i) => {
-                                  if (item === "cod") {
-                                    return (
-                                      <View style={{flexDirection: "row", alignItems: "center"}} key={i + "fkjnk"}>
-                                        <CheckBox
-                                          style={{color: AppColors.appGreen, marginRight: 10}}
-                                          value={methodType.cod}
-                                          tintColor={AppColors.appGreen}
-                                          onCheckColor={AppColors.appGreen}
-                                          tintColors={{false: AppColors.appGreen, true: AppColors.appGreen}}
-                                          onValueChange={(newValue) => {
-                                            if (newValue) {
-                                              setFieldValue("payment_method", "cod");
-                                              setFieldValue("payment_method_title", "Cash on Delivery");
-                                              setPaymentMethod({
-                                                payment_method: "cod",
-                                                payment_method_title: "Cash on Delivery",
-                                              });
-                                              setMethodType((prev) => ({
-                                                bankTransfer: false,
-                                                check: false,
-                                                cod: newValue,
-                                                stripe: false,
-                                              }));
-                                            } else {
-                                              setFieldValue("payment_method", "");
-                                              setFieldValue("payment_method_title", "");
-
-                                              setPaymentMethod(null);
-                                              setMethodType((prev) => ({
-                                                bankTransfer: false,
-                                                check: false,
-                                                cod: newValue,
-                                                stripe: false,
-                                              }));
-                                            }
-                                          }}
-                                        />
-
-                                        <Text style={{fontSize: 16, color: AppColors.black, fontFamily: fonts.Light}}>
-                                          Cash on Delivery
-                                        </Text>
-                                      </View>
-                                    );
-                                  } else if (item === "stripe") {
-                                    return (
-                                      <View style={{flexDirection: "row", alignItems: "center"}} key={i + "fkjnk"}>
-                                        <CheckBox
-                                          style={{color: AppColors.appGreen, marginRight: 10}}
-                                          value={methodType.stripe}
-                                          tintColor={AppColors.appGreen}
-                                          onCheckColor={AppColors.appGreen}
-                                          tintColors={{false: AppColors.appGreen, true: AppColors.appGreen}}
-                                          onValueChange={(newValue) => {
-                                            if (newValue) {
-                                              setFieldValue("payment_method", "stripe");
-                                              setFieldValue("payment_method_title", "Credit Card (Stripe)");
-
-                                              setPaymentMethod({
-                                                payment_method: "Stripe",
-                                                payment_method_title: "Credit Card (Stripe)",
-                                              });
-                                              setMethodType((prev) => ({
-                                                bankTransfer: false,
-                                                check: false,
-                                                cod: false,
-                                                stripe: newValue,
-                                              }));
-                                            } else {
-                                              setPaymentMethod(null);
-                                              setFieldValue("payment_method", "");
-                                              setFieldValue("payment_method_title", "");
-
-                                              setMethodType((prev) => ({
-                                                bankTransfer: false,
-                                                check: false,
-                                                cod: false,
-                                                stripe: newValue,
-                                              }));
-                                            }
-                                          }}
-                                        />
-
-                                        <Text style={{fontSize: 16, color: AppColors.black, fontFamily: fonts.Light}}>
-                                          Credit Card (Stripe)
-                                        </Text>
-                                      </View>
-                                    );
-                                  }
-                                })}
-
-                              {methodType.stripe && (
+                              {/* {methodType.stripe && (
                                 <View>
                                   <TheTextInput
                                     label={"Card Number"}
@@ -714,7 +827,7 @@ const CheckOutScreen = ({route, navigation}) => {
                                     />
                                   </View>
                                 </View>
-                              )}
+                              )} */}
                               <TouchableOpacity onPress={handleSubmit} disabled={isSubmitting || !isValid}>
                                 <View
                                   style={{

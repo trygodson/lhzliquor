@@ -3,13 +3,15 @@ import {useSelector} from "react-redux";
 import {CustomHeader2} from "../components/common";
 import FeaturedItem from "../components/homecomponent/featured/featuredItem";
 import Empty from "../assets/icons/empty1.svg";
+import AppColors from "../utils/ColorApp";
+import {fonts} from "../utils/constants";
 const WishListScreen = () => {
   const {wishlist} = useSelector((state) => state.wishList);
   const {height} = useWindowDimensions();
   const RenderEmpty = () => {
     return (
       <View style={{width: "100%", height: height * 0.8, alignItems: "center", justifyContent: "center"}}>
-        <Empty style={{alignSelf: "center"}} />
+        <Text style={{color: AppColors.black, fontSize: 17, fontFamily: fonts.Medium}}>No Items On WishList</Text>
       </View>
     );
   };
@@ -34,7 +36,7 @@ const WishListScreen = () => {
                     images={item.image}
                   />
                 )}
-                //ListEmptyComponent={<RenderEmpty />}
+                ListEmptyComponent={<RenderEmpty />}
               />
             </View>
           )}

@@ -2,6 +2,7 @@ const AppColors = {
   mainBG: "#f8f6f",
   // appGreen: "#83b735",
   appGreen: "#744C29",
+  appGreen30: "#744c2953",
   lightGray: "#777777",
   lightGray2: "#D4D4D4",
   black: "black",

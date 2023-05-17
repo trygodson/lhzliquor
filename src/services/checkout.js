@@ -26,6 +26,19 @@ export async function getAddressService() {
     throw error;
   }
 }
+export async function paymentIntentService(payload) {
+  console.log(await Global.getToken(), "await Global.getToken(),");
+  let header = {
+    "Content-Type": "application/json",
+    letscms_token: await Global.getToken(),
+  };
+  try {
+    const response = await shopAPi(ApiEndpoints.PAYMENTINTENTS, null, "POST", payload, true, header);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
 export async function createOrderService(payload) {
   console.log(await Global.getToken(), "await Global.getToken(),");
   let header = {

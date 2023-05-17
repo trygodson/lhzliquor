@@ -1,6 +1,6 @@
 import {TouchableOpacity} from "react-native";
 import {getStatusBarHeight} from "react-native-status-bar-height";
-import {useNavigation} from "@react-navigation/native";
+import {useNavigation, useRoute} from "@react-navigation/native";
 import styled from "styled-components/native";
 import GoBack from "../../../assets/icons/goback.svg";
 import ShoppingBag from "../../../assets/icons/bag.svg";
@@ -17,6 +17,7 @@ const HeaderContainer = styled.View`
 
 const CustomHeader = () => {
   const {goBack} = useNavigation();
+  const {name} = useRoute();
   return (
     <HeaderContainer>
       <TouchableOpacity onPress={() => goBack()}>
@@ -28,6 +29,7 @@ const CustomHeader = () => {
 export const CustomHeader2 = ({title, shoppingBag = true}) => {
   const {goBack, navigate} = useNavigation();
   const {response} = useSelector((state) => state.cartCount);
+  const {name} = useRoute();
   return (
     <View
       style={{
@@ -45,11 +47,13 @@ export const CustomHeader2 = ({title, shoppingBag = true}) => {
       }}
     >
       <View style={{flexDirection: "row", alignItems: "center"}}>
-        <TouchableOpacity onPress={() => goBack()} style={{marginRight: 10, width: 30, height: "80%"}}>
-          <GoBack />
-        </TouchableOpacity>
+        {name !== "HomeScreen" && (
+          <TouchableOpacity onPress={() => goBack()} style={{marginRight: 10, width: 30, height: "80%"}}>
+            <GoBack />
+          </TouchableOpacity>
+        )}
       </View>
-      <Text style={{color: "black", fontSize: 22, fontWeight: "600"}}>{title ? title : "LHZLIQUOR"}</Text>
+      <Text style={{color: "black", fontSize: 22, fontWeight: "600"}}>{title ? title : "LHZ LIQUOR"}</Text>
 
       {shoppingBag ? (
         <TouchableOpacity
