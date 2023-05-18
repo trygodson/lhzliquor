@@ -71,10 +71,9 @@ const AccountScreen = () => {
     setLoading(true);
     deleteAccountService({email: response?.email})
       .then(async (res) => {
-        setLoading(false);
-
         console.log(res, "------res-----");
         await signout();
+        setLoading(false);
       })
       .catch((err) => {
         setLoading(false);
